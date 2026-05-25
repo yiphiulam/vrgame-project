@@ -1,0 +1,21 @@
+﻿name: GitHub Actions Demo
+run-name: GitHub Actions Demo
+
+on:
+  push:
+    branches:
+      - '*' 
+  workflow_dispatch: 
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      
+    steps:
+      - name: 檢查程式碼
+        uses: actions/checkout@v4
+        
+      - name: 執行指令
+        run: echo '執行成功'
