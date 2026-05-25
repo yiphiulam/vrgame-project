@@ -1,0 +1,47 @@
+# The Breathless Study Room (窒息室) - AI Coding Guidelines & Rules
+
+You are coding for a high-fidelity Unity-based VR Rule Horror experience called **"窒息室" (The Breathless Study Room)**. Follow these strict architectural guidelines, naming conventions, and project standards.
+
+## 🛠️ Core Technology Stack
+- **Engine**: Unity 2022.3 LTS or higher.
+- **Pipeline**: Universal Render Pipeline (URP).
+- **VR Framework**: Unity XR Interaction Toolkit (XRI) 3.x & OpenXR.
+- **Input System**: Unity Input System (New Input Actions), OpenXR plugins.
+- **Strict Prohibition**: NEVER use outdated, hardware-specific SDK APIs (like OVRInput). All hardware calls must route through OpenXR/XRI.
+
+## 📁 Directory & Asset Organization
+- All custom developer assets MUST sit strictly inside `Assets/_Project/` to isolate first-party from third-party library assets.
+- Asset organization is based on Asset Type:
+  - `Assets/_Project/Scripts/` (Core, Interactables, UI, Utils)
+  - `Assets/_Project/Prefabs/` (Room assets, triggers)
+  - `Assets/_Project/Scenes/` (Game scenes, isolated test scenes)
+  - `Assets/_Project/Audio/` (Music, SFX, Voiceover)
+- **Rule**: NEVER create empty folders unless they contain a `.keep` file to ensure SCM compliance.
+- **Meta Integrity**: Always assure `.meta` files are preserved when moving assets.
+
+## ✒️ C# Coding Style & Naming Conventions
+- **Classes / Namespaces / Public Methods / Properties**: PascalCase (e.g. `TimelineManager`, `OnDwellCompleted`).
+- **Private / Protected Fields**: `_camelCase` with leading underscore prefix (e.g. `_dwellTimer`, `_isLookingAtWindow`).
+- **Local Variables / Parameters**: standard camelCase (e.g. `elapsedSeconds`, `targetTransform`).
+- **Constants**: UPPERCASE with underscores (e.g. `DWELL_THRESHOLD_MAX`).
+- **Standardized XML Summary**: Every public class, method, field, and event MUST contain standardized XML documentations:
+  ```csharp
+  /// <summary>
+  /// Manages gaze duration and visual triggers.
+  /// </summary>
+  ```
+- **Serialization Exposure**: Prohibit using public fields for inspector access. Use `[SerializeField]` coupled with `[Header("...") ]` and `[Tooltip("...")]` to expose properties safely to designers.
+- **Decoupling Rule**: All modules MUST decouple through events. Rely heavily on standard C# `System.Action` or UnityEvent. Prohibit using `GameObject.Find` or rigid direct linkages.
+
+## 👁️ XR Gaze Interaction Architecture
+- Sync camera tracking through separate child objects (GazeInteractor) inside the XR Origin Offset hierarchy to avoid camera transform battles.
+- Track gaze duration through XRI 3.x's `XRSimpleInteractable` using `First Hover Entered` and `Hover Exited` event interfaces.
+- Dwell selection calculations must mathematically scale gaze tolerance bounds for distant objects:
+  $$\text{AssistedRadius} = \text{BaseRadius} \times \text{Clamp}(0.2 \times \text{Distance}, 1.0, 3.5)$$
+- Fallback gaze actions gracefully to static central head raycast if hardware eye-tracking is unavailable.
+
+## 🚫 Explicit Exclusions (Scope Control)
+- **NO NPCs or Pathfinding AI**: Do not generate NavMesh navigation, skeleton animations, or enemy states. Fear is driven strictly by environment text, lighting, audio, and shadow masks.
+- **NO Physics Combat or Free Locomotion**: Restrict players to fixed node cameras. Do not add health limits, firearms, or kinematic movement controllers.
+- **NO Netcode/Multiplayer**: Ensure local single-player isolation.
+- **NO Non-diegetic UI**: All instructions, lists, and watch values must fit naturally in-world as textures, post-its, and digital displays.

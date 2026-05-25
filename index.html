@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <title>窒息室 | The Breathless Study Room - 360 VR 沉浸式規則怪談</title>
+  
+  <!-- SEO Optimization -->
+  <meta name="description" content="窒息室 (The Breathless Study Room) 是一款結合空間敘事與心理博弈的 360° VR 沉浸式規則怪談恐怖體驗。在午夜 24:01 的自習室中，面對矛盾的規則，你能保持獨立思考並成功生存嗎？">
+  
+  <!-- A-Frame VR Framework -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  
+  <!-- CSS Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- CRT Screen Filters & Overlays -->
+  <div class="crt-overlay"></div>
+  <div class="crt-flicker"></div>
+  <div class="vhs-noise" id="vhs-noise"></div>
+  <div class="stress-vignette" id="stress-vignette"></div>
+
+  <!-- Eye Closing Overlay (Spacebar / Screen Hold) -->
+  <div class="eye-close-overlay" id="eye-close-overlay">
+    <div class="eye-close-hint">眼睛已閉上... 不要張開...</div>
+  </div>
+
+  <!-- Landing Start Screen -->
+  <div class="menu-screen" id="menu-screen">
+    <div class="title-container">
+      <h1 class="game-title">窒息室</h1>
+      <p class="game-subtitle">The Breathless Study Room</p>
+      <div class="headphones-warning">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12v9c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1H4v-2c0-4.41 3.59-8 8-8s8 3.59 8 8v2h-3c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-9c0-5.52-4.48-10-10-10z"/>
+        </svg>
+        <span>建議配戴耳機以獲得最佳 3D 空間環繞聲效果</span>
+      </div>
+    </div>
+    
+    <div style="max-width: 600px; color: #bbb; line-height: 1.6; margin-bottom: 20px; font-size: 0.9rem;">
+      <p>「真正的恐怖，並非來自鬼魂，而是對荒謬規則的盲目服從。」</p>
+      <p style="margin-top: 10px; color: var(--amber-warning);">互動提示：電腦端使用滑鼠拖曳視角，注視物體可觸發互動；支援手機陀螺儀 VR 模式。</p>
+    </div>
+    
+    <button class="start-btn" id="start-game-btn">進入自習室</button>
+  </div>
+
+  <!-- HUD Interface (2D Overlay on top of A-Frame) -->
+  <div class="hud-container" id="hud" style="display: none;">
+    <!-- Top Bar: Timer & Stress -->
+    <div class="hud-header">
+      <div class="hud-left">
+        <div class="time-display" id="time-display">24:01</div>
+        
+        <div class="stress-container">
+          <div class="stress-label">
+            <span>壓力指數量測</span>
+            <span class="stress-value" id="stress-value">0%</span>
+          </div>
+          <div class="stress-bar-outer">
+            <div class="stress-bar-inner" id="stress-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notepad Rule Book Toggle -->
+      <button class="notepad-btn" id="notepad-toggle-btn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+        </svg>
+        <span>自習守則</span>
+        <span class="badge" id="notepad-badge" style="display: none;">NEW</span>
+      </button>
+    </div>
+
+    <!-- Handheld Clipboard Rule Panel -->
+    <div class="notepad-panel" id="notepad-panel">
+      <div class="notepad-header">夜間自習室使用守則</div>
+      <ul class="rules-list" id="rules-list">
+        <li id="rule-1">1. 隨時保持桌面檯燈開啟，切勿陷入黑暗。</li>
+        <li id="rule-2">2. 當黑板出現紅色字體規則時，絕對不要直視黑板。</li>
+        <li id="rule-3">3. 若窗戶傳來敲擊聲，請注視黑板，絕不可回頭看向窗戶。</li>
+      </ul>
+    </div>
+
+    <!-- Interactive dialog choice prompts -->
+    <div class="decision-overlay" id="decision-overlay">
+      <div class="decision-box">
+        <h3 class="decision-title" id="decision-title">系統警告</h3>
+        <p class="decision-prompt" id="decision-prompt">這裡將顯示抉擇文字</p>
+        <div class="decision-options" id="decision-options">
+          <!-- Dynamically inserted buttons -->
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD Bottom controls: Mute, Flashlight, Desk Lamp -->
+    <div class="hud-bottom">
+      <div class="control-dock">
+        <!-- Flashlight Button -->
+        <button class="control-btn" id="flashlight-btn" title="手電筒">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 2h12v3H6zm10.5 5.5l-2.5 5.5v9h-4v-9l-2.5-5.5V6h9z"/>
+          </svg>
+        </button>
+        <!-- Desk Lamp Toggle -->
+        <button class="control-btn active" id="desklamp-btn" title="書桌檯燈">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+          </svg>
+        </button>
+        <!-- Mute Audio Button -->
+        <button class="control-btn" id="mute-btn" title="靜音">
+          <svg viewBox="0 0 24 24" id="mute-icon">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Action hint / Tutorial help -->
+      <div style="background: rgba(0, 0, 0, 0.6); padding: 8px 15px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.8rem; color: #888; backdrop-filter: blur(5px);">
+        <span>按住 <strong style="color: var(--amber-warning);">空格鍵 (SPACE)</strong> 可以閉上眼睛</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ending Screen / Compliance stamp -->
+  <div class="ending-screen" id="ending-screen">
+    <div class="clipboard-paper">
+      <div class="clipboard-header">
+        <h2>順從性測試評估報告</h2>
+        <p style="font-size: 0.75rem; color: #666; margin-top: 5px;">COMPLIANCE LABS INC. - CONFIDENTIAL</p>
+      </div>
+      
+      <div class="clipboard-row">
+        <span>實驗測試編號：</span>
+        <span>#SUBJECT-09412</span>
+      </div>
+      <div class="clipboard-row">
+        <span>守則遵守率：</span>
+        <span id="end-stat-compliance">85%</span>
+      </div>
+      <div class="clipboard-row">
+        <span>獨立質疑率：</span>
+        <span id="end-stat-rebel">15%</span>
+      </div>
+      <div class="clipboard-row">
+        <span>最終理智殘餘：</span>
+        <span id="end-stat-sanity">40%</span>
+      </div>
+      
+      <h3 class="ending-title" id="end-title">順從的齒輪</h3>
+      <p class="ending-desc" id="end-desc">
+        你毫無保留地服從了管理員下達的所有荒謬指令，將個人的邏輯與理智完全扼殺，以換取權威之下的安全感。恭喜你，你已成功被規訓為一名最完美的無聲螺絲釘，將在不見天日的自習室中，永遠安分地旋轉下去。
+      </p>
+      
+      <div class="compliance-stamp" id="end-stamp">順從認證</div>
+      
+      <button class="restart-btn" id="restart-game-btn">重啟測試迴圈</button>
+    </div>
+  </div>
+
+  <!-- 360° VR Camera Rig Reticle Visualizer (Desktop display helper) -->
+  <div class="gaze-reticle-indicator" id="gaze-indicator">
+    <div class="spinner" id="gaze-spinner"></div>
+  </div>
+
+  <!-- A-Frame 3D / VR Viewport -->
+  <a-scene embedded loading-screen="enabled: false" vr-mode-ui="enabled: true" id="vr-scene">
+    <!-- Dynamic Canvas Texture Assets -->
+    <a-assets>
+      <!-- Blackboard dynamic 2D canvas -->
+      <canvas id="blackboard-canvas" width="1024" height="512"></canvas>
+      <!-- Digital Clock desk canvas -->
+      <canvas id="clock-canvas" width="256" height="128"></canvas>
+      <!-- Security Monitors display canvas -->
+      <canvas id="cctv-canvas" width="512" height="512"></canvas>
+      <!-- Security Wall post-its canvas -->
+      <canvas id="wall-rules-canvas" width="512" height="512"></canvas>
+    </a-assets>
+
+    <!-- Camera Rig -->
+    <a-entity id="camera-rig" position="0 1.2 0" rotation="0 0 0">
+      <a-camera id="main-camera" look-controls="pointerLockEnabled: false" wasd-controls="enabled: false">
+        <!-- Interactive Raycast Ring Cursor -->
+        <a-cursor id="ray-cursor"
+                  position="0 0 -1"
+                  geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.02"
+                  material="color: #39ff14; shader: flat; opacity: 0.8"
+                  raycaster="objects: .clickable"
+                  animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 150; from: 0.1 0.1 0.1; to: 1 1 1"
+                  animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1200; from: 1 1 1; to: 0.1 0.1 0.1"
+                  animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeOutCubic; dur: 300; to: 1 1 1">
+        </a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <!-- Global Environmental Lights -->
+    <a-entity id="scene-ambient-light" light="type: ambient; color: #111115; intensity: 0.7"></a-entity>
+    
+    <!-- Flickering Overhead Fluorescent Point Light -->
+    <a-entity id="ceiling-flicker-light" position="0 2.8 0" light="type: point; color: #cceeff; intensity: 0.6; distance: 8; decay: 1.5; castShadow: false"></a-entity>
+
+    <!-- ==================== SCENE 1: STUDY ROOM (自習室) ==================== -->
+    <a-entity id="scene-study-room" visible="true">
+      
+      <!-- Classroom Walls & Structural Box -->
+      <!-- Floor -->
+      <a-plane rotation="-90 0 0" width="8" height="8" material="color: #1a1b18; roughness: 0.9; metalness: 0.1"></a-plane>
+      <!-- Ceiling -->
+      <a-plane position="0 3 0" rotation="90 0 0" width="8" height="8" material="color: #0c0d0b; roughness: 1.0"></a-plane>
+      
+      <!-- Front Wall (Blackboard Wall) -->
+      <a-plane position="0 1.5 -4" rotation="0 0 0" width="8" height="3" material="color: #121411; roughness: 0.9"></a-plane>
+      <!-- Back Wall (Door Wall) -->
+      <a-plane position="0 1.5 4" rotation="0 180 0" width="8" height="3" material="color: #121411; roughness: 0.9"></a-plane>
+      <!-- Left Wall (Window Wall) -->
+      <a-plane position="-4 1.5 0" rotation="0 90 0" width="8" height="3" material="color: #0e100d; roughness: 0.9"></a-plane>
+      <!-- Right Wall (Locker Wall) -->
+      <a-plane position="4 1.5 0" rotation="0 -90 0" width="8" height="3" material="color: #121411; roughness: 0.9"></a-plane>
+
+      <!-- Ceiling Grid Lines (Classroom look) -->
+      <a-box position="0 2.95 0" depth="0.05" width="8" height="0.1" material="color: #050505"></a-box>
+      <a-box position="0 2.95 0" depth="8" width="0.1" height="0.05" material="color: #050505"></a-box>
+
+      <!-- 1. FRONT: Blackboard & Dynamic SVG Rules Chalkboard -->
+      <a-entity id="blackboard-board" position="0 1.6 -3.95" class="clickable">
+        <!-- Blackboard slate frame -->
+        <a-box width="3.8" height="1.6" depth="0.05" material="color: #1a2219; roughness: 0.95"></a-box>
+        <!-- Wood frame borders -->
+        <a-box position="0 0.82 0" width="3.9" height="0.06" depth="0.08" material="color: #3d2314"></a-box>
+        <a-box position="0 -0.82 0" width="3.9" height="0.06" depth="0.08" material="color: #3d2314"></a-box>
+        <a-box position="1.92 0 0" width="0.06" height="1.7" depth="0.08" material="color: #3d2314"></a-box>
+        <a-box position="-1.92 0 0" width="0.06" height="1.7" depth="0.08" material="color: #3d2314"></a-box>
+        
+        <!-- Interactive blackboard slate screen -->
+        <a-plane id="blackboard-screen" position="0 0 0.03" width="3.6" height="1.4" 
+                 material="src: #blackboard-canvas; transparent: true; roughness: 1.0">
+        </a-plane>
+      </a-entity>
+
+      <!-- 2. LEFT: Classroom Window with Storm & Peeping Shadow -->
+      <a-entity id="classroom-window" position="-3.95 1.6 0" rotation="0 90 0" class="clickable">
+        <!-- Window outer frame -->
+        <a-box width="2.4" height="1.6" depth="0.05" material="color: #0a0a0c; roughness: 0.9"></a-box>
+        <!-- Window glass panes (slightly dark semi-transparent blue) -->
+        <a-plane position="0 0 0.03" width="2.2" height="1.4" material="color: #0b1a24; opacity: 0.7; roughness: 0.1; metalness: 0.9"></a-plane>
+        <!-- Window pane separators -->
+        <a-box position="0 0 0.04" width="2.25" height="0.03" depth="0.02" material="color: #08080a"></a-box>
+        <a-box position="0 0 0.04" width="0.03" height="1.45" depth="0.02" material="color: #08080a"></a-box>
+
+        <!-- Anomaly Window Face Plane (Fades in when tapping triggers) -->
+        <a-plane id="window-anomaly-face" position="0 0 -0.01" rotation="0 180 0" width="0.8" height="0.8"
+                 material="color: #ffffff; opacity: 0; transparent: true; shader: flat; src: url(data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'%3E%3Cpath d='M30 65C30 65 35 75 50 75C65 75 70 65 70 65' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='35' cy='45' r='5' fill='%23ffffff'/%3E%3Ccircle cx='65' cy='45' r='5' fill='%23ffffff'/%3E%3Cpath d='M50 15C30 15 20 28 20 45C20 62 30 85 50 85C70 85 80 62 80 45C80 28 70 15 50 15Z' stroke='%23ffffff' stroke-width='4'/%3E%3C/svg%3E)">
+        </a-plane>
+      </a-entity>
+
+      <!-- 3. RIGHT: Rust Lockers with Hidden Notepad Rules Paper -->
+      <a-entity id="locker-set" position="3.9 1.4 0.8" rotation="0 -90 0">
+        <!-- Main Locker Frame -->
+        <a-box width="1.6" height="2.0" depth="0.5" material="color: #3b3a36; roughness: 0.9; metalness: 0.3"></a-box>
+        
+        <!-- Individual Locker Doors -->
+        <!-- Locker Door Left (Static locked) -->
+        <a-box position="-0.4 0 0.26" width="0.75" height="1.9" depth="0.03" material="color: #2b2a26; roughness: 0.8"></a-box>
+        
+        <!-- Locker Door Right (Interactive: Gaze to open and read secret) -->
+        <a-entity id="interactive-locker-door" position="0.4 0 0.26" class="clickable">
+          <!-- Door mesh pivoting around its left edge -->
+          <a-box id="locker-door-mesh" position="0 0 0" width="0.72" height="1.9" depth="0.03" material="color: #2f2e2a; roughness: 0.85">
+            <!-- Locker grill slits -->
+            <a-box position="0 0.7 0.02" width="0.4" height="0.02" depth="0.01" material="color: #151515"></a-box>
+            <a-box position="0 0.6 0.02" width="0.4" height="0.02" depth="0.01" material="color: #151515"></a-box>
+            <!-- locker door handle -->
+            <a-box position="-0.3 0 0.03" width="0.03" height="0.2" depth="0.04" material="color: #111"></a-box>
+          </a-box>
+        </a-entity>
+        
+        <!-- Secret Rule Note inside the right locker (Visible when door rotates open) -->
+        <a-plane id="secret-locker-note" position="0.4 -0.1 0.1" rotation="0 0 0" width="0.4" height="0.55" class="clickable"
+                 material="color: #f7f3e6; roughness: 1.0; shader: flat" visible="true">
+          <!-- Text rendered on locker sheet -->
+          <a-text value="[WARNING]" align="center" color="#8b0000" width="2.2" position="0 0.22 0.01"></a-text>
+          <a-text value="不要相信黑板的紅色字。\n那不是人寫的。\n也不要相信任何廣播。\n唯有黑板寫綠色字時，\n才是安全的引導。\n\n- 前任自習者" align="center" color="#222" width="1.4" position="0 -0.05 0.01" font="koke"></a-text>
+        </a-plane>
+      </a-entity>
+
+      <!-- 4. BACK: Locked Heavy Iron Door with Administrator Window -->
+      <a-entity id="classroom-door" position="0 1.3 3.9" rotation="0 180 0">
+        <!-- Door Frame -->
+        <a-box width="1.4" height="2.5" depth="0.1" material="color: #1b1510; roughness: 0.9"></a-box>
+        <!-- Inner Door Panel -->
+        <a-box id="classroom-door-panel" position="0 0 0.02" width="1.2" height="2.4" depth="0.06" class="clickable" material="color: #2b2118; roughness: 0.95">
+          <!-- Metallic circular lock knob -->
+          <a-sphere position="0.48 0 0.04" radius="0.05" material="color: #888; metalness: 0.9; roughness: 0.1"></a-sphere>
+          
+          <!-- Small glass pane for administrator inspection -->
+          <a-box position="0 0.5 0.01" width="0.35" height="0.5" depth="0.05" material="color: #0e0a05; roughness: 0.8"></a-box>
+          <a-plane position="0 0.5 0.04" width="0.3" height="0.45" material="color: #1a1a24; opacity: 0.7; roughness: 0.1"></a-plane>
+          
+          <!-- Shadow Silhouette of administrator guard (flickers in) -->
+          <a-plane id="guard-door-silhouette" position="0 0.5 0.02" rotation="0 180 0" width="0.32" height="0.45"
+                   material="color: #000; opacity: 0; transparent: true; shader: flat; src: url(data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'%3E%3Cpath d='M50 25C58.2843 25 65 18.2843 65 10C65 1.71573 58.2843 -5 50 -5C41.7157 -5 35 1.71573 35 10C35 18.2843 41.7157 25 50 25Z' fill='%23000000'/%3E%3Cpath d='M15 85C15 60 30 35 50 35C70 35 85 60 85 85H15Z' fill='%23000000'/%3E%3C/svg%3E)">
+          </a-plane>
+        </a-box>
+      </a-entity>
+
+      <!-- 5. CENTER: Player's Desk Setup -->
+      <a-entity id="player-desk" position="0 0 -0.8">
+        <!-- Wooden table top -->
+        <a-box position="0 0.75 0" width="1.4" height="0.06" depth="0.8" material="color: #4a3423; roughness: 0.8"></a-box>
+        <!-- Table Legs -->
+        <a-box position="-0.65 0.37 -0.35" width="0.06" height="0.74" depth="0.06" material="color: #151515"></a-box>
+        <a-box position="0.65 0.37 -0.35" width="0.06" height="0.74" depth="0.06" material="color: #151515"></a-box>
+        <a-box position="-0.65 0.37 0.35" width="0.06" height="0.74" depth="0.06" material="color: #151515"></a-box>
+        <a-box position="0.65 0.37 0.35" width="0.06" height="0.74" depth="0.06" material="color: #151515"></a-box>
+
+        <!-- Desk Lamp (Interactive point light) -->
+        <a-entity id="desk-lamp" position="-0.4 0.78 -0.2" class="clickable">
+          <!-- Lamp metal base -->
+          <a-cylinder radius="0.08" height="0.02" material="color: #2b2b2b; metalness: 0.5"></a-cylinder>
+          <!-- Curved stand rod -->
+          <a-cylinder radius="0.012" height="0.25" position="0 0.12 0" rotation="10 0 0" material="color: #2b2b2b; metalness: 0.5"></a-cylinder>
+          <!-- Lamp shade cap -->
+          <a-cone position="0.04 0.26 0" radius-bottom="0.09" radius-top="0.04" height="0.1" rotation="-40 0 0" material="color: #8b0000; metalness: 0.3">
+            <!-- Lamp bulb glowing light -->
+            <a-sphere position="0 -0.04 0" radius="0.03" material="color: #fff; shader: flat; emissive: #fff"></a-sphere>
+          </a-cone>
+          
+          <!-- Physical spot light source (Casts spotlight down onto rules notepad) -->
+          <a-entity id="desk-lamp-light" position="0.04 0.22 0" rotation="-80 0 0"
+                    light="type: spot; color: #ffebc2; intensity: 3.5; angle: 45; penumbra: 0.5; distance: 3.5; castShadow: false">
+          </a-entity>
+        </a-entity>
+
+        <!-- Digital Alarm Clock (Frozen/Going backwards) -->
+        <a-entity id="desk-clock" position="0.4 0.8 -0.2" rotation="10 -25 0" class="clickable">
+          <!-- Clock body casing -->
+          <a-box width="0.3" height="0.12" depth="0.1" material="color: #15151a; metalness: 0.8; roughness: 0.2"></a-box>
+          <!-- Glow screen display -->
+          <a-plane position="0 0 0.052" width="0.27" height="0.095" 
+                   material="src: #clock-canvas; transparent: true; shader: flat">
+          </a-plane>
+        </a-entity>
+
+        <!-- Hand-written Study Rule Paper on Table -->
+        <a-plane id="desk-rules-paper" position="0 0.785 0.1" rotation="-90 -10 0" width="0.42" height="0.52" class="clickable"
+                 material="color: #eae3d2; roughness: 1.0; shader: flat">
+          <a-text value="夜間自習守則" align="center" color="#2b261f" width="1.6" position="0 0.2 0.005"></a-text>
+          <a-text value="1. 隨時保持桌面檯燈開啟，切勿陷入黑暗。\n2. 當黑板出現紅色字體規則時，絕對不要直視黑板。\n3. 若窗戶傳來敲擊聲，請注視黑板，絕不可回頭看向窗戶。" align="center" color="#3d372e" width="1.0" position="0 -0.05 0.005"></a-text>
+          <a-text value="[點擊閱讀]" align="center" color="#8b0000" width="0.8" position="0 -0.22 0.005"></a-text>
+        </a-plane>
+      </a-entity>
+
+      <!-- Scattered background empty chairs and study desks to create study room mood -->
+      <a-entity position="-2 0 -2.5" rotation="0 15 0">
+        <a-box position="0 0.75 0" width="1.2" height="0.06" depth="0.7" material="color: #3a2a1b; roughness: 0.9"></a-box>
+        <a-box position="-0.5 0.35 0" width="0.05" height="0.7" depth="0.05" material="color: #222"></a-box>
+        <a-box position="0.5 0.35 0" width="0.05" height="0.7" depth="0.05" material="color: #222"></a-box>
+      </a-entity>
+      <a-entity position="2 0 -2.5" rotation="0 -10 0">
+        <a-box position="0 0.75 0" width="1.2" height="0.06" depth="0.7" material="color: #3a2a1b; roughness: 0.9"></a-box>
+        <a-box position="-0.5 0.35 0" width="0.05" height="0.7" depth="0.05" material="color: #222"></a-box>
+        <a-box position="0.5 0.35 0" width="0.05" height="0.7" depth="0.05" material="color: #222"></a-box>
+      </a-entity>
+      
+      <!-- Ghost student card on floor -->
+      <a-plane id="floor-student-card" position="-0.8 0.01 -0.4" rotation="-90 35 0" width="0.22" height="0.14" class="clickable"
+               material="color: #eaeaea; roughness: 0.8; shader: flat">
+        <a-text value="學生證" align="center" color="#111" width="0.7" position="0 0.04 0.005"></a-text>
+        <a-text value="自習編號: #09412\n姓名: 蕭崇恩" align="center" color="#444" width="0.5" position="0 -0.03 0.005"></a-text>
+      </a-plane>
+
+    </a-entity>
+
+
+    <!-- ==================== SCENE 2: THE CORRIDOR (走廊) ==================== -->
+    <a-entity id="scene-corridor" visible="false">
+      <!-- Floor -->
+      <a-plane rotation="-90 0 0" width="3" height="24" material="color: #0f100e; roughness: 0.95"></a-plane>
+      <!-- Ceiling -->
+      <a-plane position="0 2.8 0" rotation="90 0 0" width="3" height="24" material="color: #050605; roughness: 1.0"></a-plane>
+      <!-- Right Corridor Wall -->
+      <a-plane position="1.5 1.4 0" rotation="0 -90 0" width="24" height="2.8" material="color: #121411; roughness: 0.9"></a-plane>
+      <!-- Left Corridor Wall -->
+      <a-plane position="-1.5 1.4 0" rotation="0 90 0" width="24" height="2.8" material="color: #121411; roughness: 0.9"></a-plane>
+
+      <!-- Corridor Doors -->
+      <!-- Classroom Entrance door we just opened behind us -->
+      <a-entity id="corridor-classroom-door" position="0 1.3 5" rotation="0 0 0">
+        <a-box width="1.2" height="2.4" depth="0.1" material="color: #2b2118"></a-box>
+        <!-- Interactive Room Tag showing "COMPLIANCE LAB" or "自習室" -->
+        <a-plane position="0 0.7 0.06" width="0.4" height="0.15" material="color: #111; shader: flat">
+          <a-text id="classroom-door-tag" value="自習室" align="center" color="#ffb000" width="1.2" position="0 0 0.01"></a-text>
+        </a-plane>
+      </a-entity>
+
+      <!-- 1. LEFT: Creepy bathroom door with toilet static hum -->
+      <a-entity id="corridor-bathroom" position="-1.48 1.3 -2" rotation="0 90 0">
+        <!-- Door block -->
+        <a-box width="1.0" height="2.2" depth="0.04" material="color: #222522; metalness: 0.2"></a-box>
+        <a-plane position="0 0.6 0.03" width="0.3" height="0.12" material="color: #000; shader: flat">
+          <a-text value="TOILET" align="center" color="#ff3333" width="1.0" position="0 0 0.01"></a-text>
+        </a-plane>
+        
+        <!-- Dripping leaks on wall -->
+        <a-plane position="0.3 -0.5 0.01" rotation="0 180 0" width="0.2" height="0.8" material="color: #000000; opacity: 0.7; transparent: true"></a-plane>
+      </a-entity>
+
+      <!-- 2. RIGHT: Stairs leading up to darkness -->
+      <a-entity id="corridor-stairs" position="1.48 1.0 -4" rotation="0 -90 0" class="clickable">
+        <!-- Dark opening door -->
+        <a-box width="1.2" height="2.2" depth="0.04" material="color: #0d0c0c"></a-box>
+        <a-plane position="0 0.6 0.03" width="0.3" height="0.12" material="color: #111; shader: flat">
+          <a-text value="往上樓梯" align="center" color="#ffb000" width="1.0" position="0 0 0.01"></a-text>
+        </a-plane>
+      </a-entity>
+
+      <!-- 3. FRONT: Safe Exit sign (End of Hallway) -->
+      <a-entity id="corridor-exit-node" position="0 1.3 -11">
+        <!-- Red safety emergency exit sign glowing -->
+        <a-box position="0 1.2 0" width="0.5" height="0.25" depth="0.15" material="color: #0d0d0d">
+          <a-plane position="0 0 0.08" width="0.45" height="0.2" id="corridor-exit-sign"
+                   material="color: #8b0000; emissive: #8b0000; shader: flat">
+            <a-text value="EXIT 出口" align="center" color="#fff" width="1.4" position="0 0 0.01"></a-text>
+          </a-plane>
+        </a-box>
+        
+        <!-- Glass door to Guard Room (clickable to escape) -->
+        <a-box id="corridor-exit-door" position="0 0 0" width="1.2" height="2.3" depth="0.08" class="clickable"
+               material="color: #1f211e; opacity: 0.85; roughness: 0.1">
+          <a-sphere position="0.4 0 0.05" radius="0.04" material="color: #fff"></a-sphere>
+        </a-box>
+      </a-entity>
+
+      <!-- Corridor lighting elements -->
+      <a-entity id="corridor-light-1" position="0 2.7 -2" light="type: point; color: #aaffcc; intensity: 0.15; distance: 6"></a-entity>
+      <a-entity id="corridor-light-2" position="0 2.7 -8" light="type: point; color: #ffcccc; intensity: 0.25; distance: 6"></a-entity>
+    </a-entity>
+
+
+    <!-- ==================== SCENE 3: GUARD ROOM (警衛室) ==================== -->
+    <a-entity id="scene-guard-room" visible="false">
+      <!-- Cozy but highly claustrophobic small room -->
+      <!-- Floor -->
+      <a-plane rotation="-90 0 0" width="4" height="4" material="color: #2b2b2b; roughness: 0.8"></a-plane>
+      <!-- Ceiling -->
+      <a-plane position="0 2.5 0" rotation="90 0 0" width="4" height="4" material="color: #121212; roughness: 1.0"></a-plane>
+      <!-- Front Wall (CCTV monitors) -->
+      <a-plane position="0 1.25 -2" rotation="0 0 0" width="4" height="2.5" material="color: #1a1a1c; roughness: 0.9"></a-plane>
+      <!-- Back Wall (Entrance door) -->
+      <a-plane position="0 1.25 2" rotation="0 180 0" width="4" height="2.5" material="color: #1a1a1c; roughness: 0.9"></a-plane>
+      <!-- Left Wall (Rule wall) -->
+      <a-plane position="-2 1.25 0" rotation="0 90 0" width="4" height="2.5" material="color: #1a1a1c; roughness: 0.9"></a-plane>
+      <!-- Right Wall -->
+      <a-plane position="2 1.25 0" rotation="0 -90 0" width="4" height="2.5" material="color: #1a1a1c; roughness: 0.9"></a-plane>
+
+      <!-- Guard desk and chairs -->
+      <a-entity position="0 0 -1.2">
+        <!-- Metal Table -->
+        <a-box position="0 0.65 0" width="1.8" height="0.08" depth="0.8" material="color: #555c63; metalness: 0.8; roughness: 0.2"></a-box>
+        <!-- Table legs -->
+        <a-box position="-0.85 0.3 -0.35" width="0.05" height="0.6" depth="0.05" material="color: #222"></a-box>
+        <a-box position="0.85 0.3 -0.35" width="0.05" height="0.6" depth="0.05" material="color: #222"></a-box>
+        <a-box position="-0.85 0.3 0.35" width="0.05" height="0.6" depth="0.05" material="color: #222"></a-box>
+        <a-box position="0.85 0.3 0.35" width="0.05" height="0.6" depth="0.05" material="color: #222"></a-box>
+
+        <!-- Compliance evaluation clipboard paper lying on the desk -->
+        <a-plane id="guard-clipboard-sheet" position="0 0.695 0" rotation="-90 0 0" width="0.5" height="0.65" class="clickable"
+                 material="color: #eae3d2; roughness: 1.0; shader: flat">
+          <a-text value="順從性評估報告書" align="center" color="#111" width="1.6" position="0 0.25 0.005"></a-text>
+          <a-text value="測試主體: #09412\n\n[系統分析完成]\n請點擊蓋下核准印章以\n確認測試結果，或拒絕順從。" align="center" color="#333" width="1.1" position="0 0 0.005"></a-text>
+          
+          <a-box position="0 -0.2 0.01" width="0.32" height="0.1" depth="0.02" class="clickable" material="color: #8b0000; roughness: 0.8">
+            <a-text value="蓋章 (STAMP)" align="center" color="#fff" width="1.1" position="0 0 0.015"></a-text>
+          </a-box>
+        </a-plane>
+      </a-entity>
+
+      <!-- CCTV Stack (Security Monitors Wall) -->
+      <a-entity id="cctv-stack" position="0 1.4 -1.95" class="clickable">
+        <!-- Huge CRT monitor casing -->
+        <a-box width="1.4" height="1.0" depth="0.4" material="color: #1d2124; roughness: 0.8"></a-box>
+        <!-- The CRT glowing display showing the study room CCTV (player body still in classroom!) -->
+        <a-plane id="cctv-screen" position="0 0 0.21" width="1.3" height="0.9" 
+                 material="src: #cctv-canvas; transparent: false; shader: flat">
+        </a-plane>
+      </a-entity>
+
+      <!-- Sticky Notes Rules Wall (Left wall) -->
+      <a-entity id="rules-wall" position="-1.95 1.3 0" rotation="0 90 0">
+        <!-- A panel covered in sticky note rules -->
+        <a-plane width="2.2" height="1.6" material="src: #wall-rules-canvas; transparent: true; roughness: 1.0"></a-plane>
+      </a-entity>
+
+      <!-- Guard Room lighting -->
+      <a-entity id="guard-lamp" position="0 2.3 0" light="type: point; color: #aaffff; intensity: 0.45; distance: 5"></a-entity>
+      <a-entity id="guard-red-lamp" position="0 2.3 -1.5" light="type: point; color: #ff3333; intensity: 0.0; distance: 3"></a-entity>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- Game and Loop Javascript Scripts -->
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
