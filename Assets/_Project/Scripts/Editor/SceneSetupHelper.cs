@@ -962,10 +962,19 @@ namespace TheBreathlessStudyRoom.Editor
                 var leftController = leftHandObj.AddComponent<ActionBasedController>();
 #pragma warning restore 0618
 
+                var leftSelectAction = new InputAction("LeftSelect", InputActionType.Button);
+                leftSelectAction.AddBinding("<XRController>{LeftHand}/gripPressed");
+                leftSelectAction.AddBinding("<XRController>{LeftHand}/triggerPressed");
+                leftSelectAction.Enable();
+
+                var leftActivateAction = new InputAction("LeftActivate", InputActionType.Button);
+                leftActivateAction.AddBinding("<XRController>{LeftHand}/triggerPressed");
+                leftActivateAction.Enable();
+
                 leftController.positionAction = leftPosRef != null ? new InputActionProperty(leftPosRef) : new InputActionProperty(new InputAction("Position", InputActionType.Value, binding: "<XRController>{LeftHand}/devicePosition", expectedControlType: "Vector3"));
                 leftController.rotationAction = leftRotRef != null ? new InputActionProperty(leftRotRef) : new InputActionProperty(new InputAction("Rotation", InputActionType.Value, binding: "<XRController>{LeftHand}/deviceRotation", expectedControlType: "Quaternion"));
-                leftController.selectAction = leftSelectRef != null ? new InputActionProperty(leftSelectRef) : new InputActionProperty(new InputAction("Select", InputActionType.Button, binding: "<XRController>{LeftHand}/gripPressed"));
-                leftController.activateAction = leftActivateRef != null ? new InputActionProperty(leftActivateRef) : new InputActionProperty(new InputAction("Activate", InputActionType.Button, binding: "<XRController>{LeftHand}/triggerPressed"));
+                leftController.selectAction = new InputActionProperty(leftSelectAction);
+                leftController.activateAction = new InputActionProperty(leftActivateAction);
                 leftController.isTrackedAction = leftIsTrackedRef != null ? new InputActionProperty(leftIsTrackedRef) : new InputActionProperty(new InputAction("IsTracked", InputActionType.Button, binding: "<XRController>{LeftHand}/isTracked"));
                 leftController.trackingStateAction = leftTrackingStateRef != null ? new InputActionProperty(leftTrackingStateRef) : new InputActionProperty(new InputAction("TrackingState", InputActionType.Value, binding: "<XRController>{LeftHand}/trackingState", expectedControlType: "Integer"));
 
@@ -984,10 +993,19 @@ namespace TheBreathlessStudyRoom.Editor
                 var rightController = rightHandObj.AddComponent<ActionBasedController>();
 #pragma warning restore 0618
 
+                var rightSelectAction = new InputAction("RightSelect", InputActionType.Button);
+                rightSelectAction.AddBinding("<XRController>{RightHand}/gripPressed");
+                rightSelectAction.AddBinding("<XRController>{RightHand}/triggerPressed");
+                rightSelectAction.Enable();
+
+                var rightActivateAction = new InputAction("RightActivate", InputActionType.Button);
+                rightActivateAction.AddBinding("<XRController>{RightHand}/triggerPressed");
+                rightActivateAction.Enable();
+
                 rightController.positionAction = rightPosRef != null ? new InputActionProperty(rightPosRef) : new InputActionProperty(new InputAction("Position", InputActionType.Value, binding: "<XRController>{RightHand}/devicePosition", expectedControlType: "Vector3"));
                 rightController.rotationAction = rightRotRef != null ? new InputActionProperty(rightRotRef) : new InputActionProperty(new InputAction("Rotation", InputActionType.Value, binding: "<XRController>{RightHand}/deviceRotation", expectedControlType: "Quaternion"));
-                rightController.selectAction = rightSelectRef != null ? new InputActionProperty(rightSelectRef) : new InputActionProperty(new InputAction("Select", InputActionType.Button, binding: "<XRController>{RightHand}/gripPressed"));
-                rightController.activateAction = rightActivateRef != null ? new InputActionProperty(rightActivateRef) : new InputActionProperty(new InputAction("Activate", InputActionType.Button, binding: "<XRController>{RightHand}/triggerPressed"));
+                rightController.selectAction = new InputActionProperty(rightSelectAction);
+                rightController.activateAction = new InputActionProperty(rightActivateAction);
                 rightController.isTrackedAction = rightIsTrackedRef != null ? new InputActionProperty(rightIsTrackedRef) : new InputActionProperty(new InputAction("IsTracked", InputActionType.Button, binding: "<XRController>{RightHand}/isTracked"));
                 rightController.trackingStateAction = rightTrackingStateRef != null ? new InputActionProperty(rightTrackingStateRef) : new InputActionProperty(new InputAction("TrackingState", InputActionType.Value, binding: "<XRController>{RightHand}/trackingState", expectedControlType: "Integer"));
 
