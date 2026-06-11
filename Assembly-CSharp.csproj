@@ -1,4 +1,4 @@
-﻿<Project ToolsVersion="Current">
+<Project ToolsVersion="Current">
   <!-- Generated file, do not modify, your changes will be overwritten (use AssetPostprocessor.OnGeneratedCSProject) -->
   <PropertyGroup>
     <BaseIntermediateOutputPath>Temp\obj\$(Configuration)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
@@ -83,6 +83,7 @@
     <Compile Include="Assets\_Project\Scripts\Core\TimelineManager.cs" />
     <Compile Include="Assets\_Project\Scripts\Interactables\DoorSignScare.cs" />
     <Compile Include="Assets\_Project\Scripts\Interactables\EyeCloseManager.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\KeyboardLocomotionFallback.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\HintSystem.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\SecurityCameraMonitor.cs" />
   </ItemGroup>

@@ -900,6 +900,10 @@ namespace TheBreathlessStudyRoom.Editor
                 mainCam.farClipPlane = 100f;
                 mainCameraObj.AddComponent<AudioListener>();
 
+                // Keyboard movement fallback setup
+                var keyboardLoco = xrOriginObj.AddComponent<KeyboardLocomotionFallback>();
+                keyboardLoco.cameraTransform = mainCameraObj.transform;
+
                 // Setup scare references
                 if (doorSignScare != null)
                 {
