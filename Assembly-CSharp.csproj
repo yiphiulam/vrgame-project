@@ -77,6 +77,7 @@
     <Compile Include="Assets\_Project\Scripts\Core\TutorialManager.cs" />
     <Compile Include="Assets\_Project\Scripts\Interactables\LockerDoorOpener.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\AudioManager.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\VROriginRecenterer.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\StartScreenManager.cs" />
     <Compile Include="Assets\_Project\Scripts\Interactables\FlashlightAntiGlare.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\TimelineManager.cs" />

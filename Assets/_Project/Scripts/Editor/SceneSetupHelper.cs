@@ -1118,6 +1118,9 @@ namespace TheBreathlessStudyRoom.Editor
                 eyeCloseManager.blackoutQuad = blackoutQuad;
                 eyeCloseManager.timelineManager = timelineManager;
 
+                // VR Origin Recenterer setup
+                gameManagerObj.AddComponent<VROriginRecenterer>();
+
                 Debug.Log("[SceneSetupHelper] UX dynamic state managers, Highlights, and Teleport controller linked successfully.");
 
                 // ==================== ENDING BILLBOARD & MANAGER SETUP ====================
