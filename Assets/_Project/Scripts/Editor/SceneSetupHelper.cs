@@ -390,6 +390,9 @@ namespace TheBreathlessStudyRoom.Editor
             Light deskLampLight = null;
             GameObject rulesPaper = null;
             LampToggler toggleHelper = null;
+            GameObject lampStand = null;
+            GameObject lampShade = null;
+            GameObject lampBulb = null;
             try
             {
                 GameObject playerDeskGroup = new GameObject("PlayerDesk_Station");
@@ -414,15 +417,15 @@ namespace TheBreathlessStudyRoom.Editor
                 deskLampBase = CreatePrimitiveCylinder("LampBase", lampGroup.transform, Vector3.zero, new Vector3(0.16f, 0.01f, 0.16f), GetColor("#2b2b2b"));
                 
                 // Stand
-                var lampStand = CreatePrimitiveCylinder("LampStand", lampGroup.transform, new Vector3(0f, 0.12f, 0f), new Vector3(0.024f, 0.125f, 0.024f), GetColor("#2b2b2b"));
+                lampStand = CreatePrimitiveCylinder("LampStand", lampGroup.transform, new Vector3(0f, 0.12f, 0f), new Vector3(0.024f, 0.125f, 0.024f), GetColor("#2b2b2b"));
                 lampStand.transform.localRotation = Quaternion.Euler(10f, 0f, 0f);
 
                 // Shade cap
-                var lampShade = CreatePrimitiveCone("LampShade", lampGroup.transform, new Vector3(0.04f, 0.26f, 0f), new Vector3(0.18f, 0.1f, 0.18f), GetColor("#8b0000"));
+                lampShade = CreatePrimitiveCone("LampShade", lampGroup.transform, new Vector3(0.04f, 0.26f, 0f), new Vector3(0.18f, 0.1f, 0.18f), GetColor("#8b0000"));
                 lampShade.transform.localRotation = Quaternion.Euler(-40f, 0f, 0f);
 
                 // Bulb
-                var lampBulb = CreatePrimitiveSphere("LampBulb", lampShade.transform, new Vector3(0f, -0.04f, 0f), new Vector3(0.06f, 0.06f, 0.06f), Color.white);
+                lampBulb = CreatePrimitiveSphere("LampBulb", lampShade.transform, new Vector3(0f, -0.04f, 0f), new Vector3(0.06f, 0.06f, 0.06f), Color.white);
                 lampBulb.GetComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
 
                 // Spotlight
@@ -1042,6 +1045,25 @@ namespace TheBreathlessStudyRoom.Editor
                 if (lampGroup != null)
                 {
                     var grabInteractable = lampGroup.AddComponent<XRGrabInteractable>();
+                    
+                    // Explicitly define grab colliders to exclude the base collider (which is used for GazeDwellSelector)
+                    grabInteractable.colliders.Clear();
+                    if (lampStand != null)
+                    {
+                        var col = lampStand.GetComponent<Collider>();
+                        if (col != null) grabInteractable.colliders.Add(col);
+                    }
+                    if (lampShade != null)
+                    {
+                        var col = lampShade.GetComponent<Collider>();
+                        if (col != null) grabInteractable.colliders.Add(col);
+                    }
+                    if (lampBulb != null)
+                    {
+                        var col = lampBulb.GetComponent<Collider>();
+                        if (col != null) grabInteractable.colliders.Add(col);
+                    }
+
                     var lampRb = lampGroup.GetComponent<Rigidbody>();
                     if (lampRb != null)
                     {
