@@ -1,0 +1,14 @@
+{
+  "name": "vrgame-project",
+  "version": "1.0.0",
+  "description": "The Breathless Study Room WebVR Showcase",
+  "main": "game.js",
+  "scripts": {
+    "build": "echo \"No build step required for static WebVR. Files are served directly from root.\"",
+    "start": "npx serve ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}
