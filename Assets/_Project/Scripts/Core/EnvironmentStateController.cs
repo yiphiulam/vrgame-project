@@ -63,7 +63,7 @@ namespace TheBreathlessStudyRoom.Core
                 case GameState.Start:
                 case GameState.Scene1StudyRoom:
                     SetActiveEnvironments(true, false, false);
-                    TeleportPlayer(new Vector3(0f, 0f, 0f), Quaternion.identity);
+                    TeleportPlayer(new Vector3(0f, 0f, -0.5f), Quaternion.identity);
                     break;
 
                 case GameState.Scene2Corridor:

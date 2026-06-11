@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using TheBreathlessStudyRoom.Core;
 using TheBreathlessStudyRoom.Interactables;
 
@@ -271,10 +275,19 @@ namespace TheBreathlessStudyRoom.Editor
 
                 // Secret locker rules note paper (located inside, visible when right door pivots open)
                 secretLockerNote = CreatePrimitiveCube("SecretLockerNote", lockerGroup.transform, new Vector3(0.4f, -0.1f, 0.1f), new Vector3(0.4f, 0.55f, 0.01f), GetColor("#f7f3e6"));
-                var secretGaze = secretLockerNote.AddComponent<GazeDwellSelector>();
-                secretGaze.interactionLayers = GetGazeInteractionLayer();
-                UnityEditor.Events.UnityEventTools.AddPersistentListener(
-                    secretGaze.OnDwellSelected, 
+                var grabSecretNote = secretLockerNote.AddComponent<XRGrabInteractable>();
+                var secretNoteRb = secretLockerNote.GetComponent<Rigidbody>();
+                if (secretNoteRb != null)
+                {
+                    secretNoteRb.mass = 0.5f;
+                    secretNoteRb.drag = 0.5f;
+                    secretNoteRb.angularDrag = 0.5f;
+                    secretNoteRb.useGravity = true;
+                    secretNoteRb.isKinematic = false;
+                }
+
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    grabSecretNote.selectEntered, 
                     new UnityAction(timelineManager.LogSecretFound)
                 );
 
@@ -345,6 +358,25 @@ namespace TheBreathlessStudyRoom.Editor
 
                 // Environmental Jump Scare Component on Door
                 doorSignScare = classroomDoorPanel.AddComponent<DoorSignScare>();
+
+                // Add GazeDwellSelector and StageTransitionTrigger for stage transition
+                var doorGaze = classroomDoorPanel.AddComponent<GazeDwellSelector>();
+                doorGaze.interactionLayers = GetGazeInteractionLayer();
+                
+                var transitionTrigger = classroomDoorPanel.AddComponent<StageTransitionTrigger>();
+                transitionTrigger.targetState = GameState.Scene2Corridor;
+                transitionTrigger.checkClassroomLock = true;
+                
+                // Hook visual dwell and controller click select
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    doorGaze.OnDwellSelected,
+                    new UnityAction(transitionTrigger.Transition)
+                );
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    doorGaze.selectEntered,
+                    new UnityAction(transitionTrigger.Transition)
+                );
+
                 Debug.Log("[SceneSetupHelper] Classroom Door created successfully.");
             }
             catch (Exception ex)
@@ -353,9 +385,11 @@ namespace TheBreathlessStudyRoom.Editor
             }
 
             // 6. CENTER: Player Desk Station (Z = 0.8f)
+            GameObject lampGroup = null;
             GameObject deskLampBase = null;
             Light deskLampLight = null;
             GameObject rulesPaper = null;
+            LampToggler toggleHelper = null;
             try
             {
                 GameObject playerDeskGroup = new GameObject("PlayerDesk_Station");
@@ -372,7 +406,7 @@ namespace TheBreathlessStudyRoom.Editor
                 CreatePrimitiveCube("LegBR", playerDeskGroup.transform, new Vector3(0.65f, 0.37f, -0.35f), new Vector3(0.06f, 0.74f, 0.06f), GetColor("#151515"));
 
                 // Desk Lamp Group (A-Frame position="-0.4 0.78 -0.2" -> Unity Z=0.2)
-                GameObject lampGroup = new GameObject("Desk_Lamp");
+                lampGroup = new GameObject("Desk_Lamp");
                 lampGroup.transform.SetParent(playerDeskGroup.transform);
                 lampGroup.transform.localPosition = new Vector3(-0.4f, 0.78f, 0.2f);
 
@@ -412,7 +446,7 @@ namespace TheBreathlessStudyRoom.Editor
                 
                 GameObject lampController = new GameObject("LampController");
                 lampController.transform.SetParent(gameManagerObj.transform);
-                var toggleHelper = lampController.AddComponent<LampToggler>();
+                toggleHelper = lampController.AddComponent<LampToggler>();
                 toggleHelper.TargetLight = deskLampLight;
                 toggleHelper.TimelineManager = timelineManager;
 
@@ -434,10 +468,19 @@ namespace TheBreathlessStudyRoom.Editor
                 rulesPaper.tag = "RulePaper";
                 rulesPaper.transform.localRotation = Quaternion.Euler(0f, -10f, 0f);
 
-                var paperGaze = rulesPaper.AddComponent<GazeDwellSelector>();
-                paperGaze.interactionLayers = GetGazeInteractionLayer();
-                UnityEditor.Events.UnityEventTools.AddPersistentListener(
-                    paperGaze.OnDwellSelected, 
+                var grabNote = rulesPaper.AddComponent<XRGrabInteractable>();
+                var rulesPaperRb = rulesPaper.GetComponent<Rigidbody>();
+                if (rulesPaperRb != null)
+                {
+                    rulesPaperRb.mass = 0.5f;
+                    rulesPaperRb.drag = 0.5f;
+                    rulesPaperRb.angularDrag = 0.5f;
+                    rulesPaperRb.useGravity = true;
+                    rulesPaperRb.isKinematic = false;
+                }
+
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    grabNote.selectEntered, 
                     new UnityAction(timelineManager.LogSecretFound)
                 );
                 Debug.Log("[SceneSetupHelper] Player desk, lamp, clock, and rules paper created successfully.");
@@ -474,6 +517,21 @@ namespace TheBreathlessStudyRoom.Editor
                 // Student card
                 var studentCard = CreatePrimitiveCube("FloorStudentCard", classroomParent.transform, new Vector3(-0.8f, 0.01f, 0.4f), new Vector3(0.22f, 0.005f, 0.14f), GetColor("#eaeaea"));
                 studentCard.transform.localRotation = Quaternion.Euler(0f, 35f, 0f);
+                var grabCard = studentCard.AddComponent<XRGrabInteractable>();
+                var cardRb = studentCard.GetComponent<Rigidbody>();
+                if (cardRb != null)
+                {
+                    cardRb.mass = 0.5f;
+                    cardRb.drag = 0.5f;
+                    cardRb.angularDrag = 0.5f;
+                    cardRb.useGravity = true;
+                    cardRb.isKinematic = false;
+                }
+
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    grabCard.selectEntered, 
+                    new UnityAction(timelineManager.LogSecretFound)
+                );
 
                 // Overhead Point lights
                 GameObject lightsGroup = new GameObject("Overhead_Lights");
@@ -568,6 +626,24 @@ namespace TheBreathlessStudyRoom.Editor
                 exitGlassDoor.GetComponent<MeshRenderer>().sharedMaterial = CreateLitMaterial(new Color(0.12f, 0.13f, 0.12f, 0.85f), 0.1f, 0.1f, true);
                 CreatePrimitiveSphere("ExitKnob", exitGlassDoor.transform, new Vector3(0.4f, 0f, 0.05f), new Vector3(0.08f, 0.08f, 0.08f), Color.white);
 
+                // Add GazeDwellSelector and StageTransitionTrigger for corridor transition to Guard Room
+                var exitGaze = exitGlassDoor.AddComponent<GazeDwellSelector>();
+                exitGaze.interactionLayers = GetGazeInteractionLayer();
+
+                var exitTransition = exitGlassDoor.AddComponent<StageTransitionTrigger>();
+                exitTransition.targetState = GameState.Scene3GuardRoom;
+                exitTransition.checkClassroomLock = false;
+
+                // Hook visual dwell and controller select
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    exitGaze.OnDwellSelected,
+                    new UnityAction(exitTransition.Transition)
+                );
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    exitGaze.selectEntered,
+                    new UnityAction(exitTransition.Transition)
+                );
+
                 // Corridor Lights
                 var corrLightObj1 = new GameObject("CorridorLight_1");
                 corrLightObj1.transform.SetParent(corridorParent.transform);
@@ -605,6 +681,13 @@ namespace TheBreathlessStudyRoom.Editor
             guardRoomParent.transform.position = Vector3.zero;
             guardRoomParent.SetActive(false); // Hidden at start
 
+            GameObject stampButton = null;
+            GazeDwellSelector stampGaze = null;
+            GameObject cctvScreen = null;
+            MeshRenderer cctvScreenRenderer = null;
+            GazeDwellSelector monitorGaze = null;
+            Light guardRedLight = null;
+
             try
             {
                 // Floor & Ceiling & Walls
@@ -628,8 +711,8 @@ namespace TheBreathlessStudyRoom.Editor
 
                 // Clipboard stamp paper
                 var guardClipboard = CreatePrimitiveCube("GuardClipboardSheet", guardDesk.transform, new Vector3(0f, 0.695f, 0f), new Vector3(0.5f, 0.01f, 0.65f), GetColor("#eae3d2"));
-                var stampButton = CreatePrimitiveCube("StampButton", guardClipboard.transform, new Vector3(0f, 0.01f, -0.2f), new Vector3(0.32f, 0.05f, 0.1f), GetColor("#8b0000"));
-                var stampGaze = stampButton.AddComponent<GazeDwellSelector>();
+                stampButton = CreatePrimitiveCube("StampButton", guardClipboard.transform, new Vector3(0f, 0.01f, -0.2f), new Vector3(0.32f, 0.05f, 0.1f), GetColor("#8b0000"));
+                stampGaze = stampButton.AddComponent<GazeDwellSelector>();
                 stampGaze.interactionLayers = GetGazeInteractionLayer();
 
                 // CCTV Stack casing & Screen Mesh
@@ -638,8 +721,8 @@ namespace TheBreathlessStudyRoom.Editor
                 cctvStack.transform.localPosition = new Vector3(0f, 1.4f, 1.95f);
                 CreatePrimitiveCube("Casing", cctvStack.transform, Vector3.zero, new Vector3(1.4f, 1.0f, 0.4f), GetColor("#1d2124"));
                 
-                var cctvScreen = CreatePrimitiveCube("CCTVScreenMesh", cctvStack.transform, new Vector3(0f, 0f, -0.21f), new Vector3(1.3f, 0.9f, 0.01f), Color.black);
-                var cctvScreenRenderer = cctvScreen.GetComponent<MeshRenderer>();
+                cctvScreen = CreatePrimitiveCube("CCTVScreenMesh", cctvStack.transform, new Vector3(0f, 0f, -0.21f), new Vector3(1.3f, 0.9f, 0.01f), Color.black);
+                cctvScreenRenderer = cctvScreen.GetComponent<MeshRenderer>();
 
                 // Virtual CCTV camera setup inside Classroom
                 var cctvCameraObj = new GameObject("CCTVCameraNode");
@@ -665,7 +748,7 @@ namespace TheBreathlessStudyRoom.Editor
                 cctvSO.ApplyModifiedProperties();
 
                 // Gaze monitor interaction
-                var monitorGaze = cctvScreen.AddComponent<GazeDwellSelector>();
+                monitorGaze = cctvScreen.AddComponent<GazeDwellSelector>();
                 monitorGaze.interactionLayers = GetGazeInteractionLayer();
 
                 // Sticky notes wall
@@ -684,7 +767,7 @@ namespace TheBreathlessStudyRoom.Editor
                 var guardRedAlertObj = new GameObject("GuardRedAlertLamp");
                 guardRedAlertObj.transform.SetParent(guardRoomParent.transform);
                 guardRedAlertObj.transform.localPosition = new Vector3(0f, 2.3f, -1.5f);
-                var guardRedLight = guardRedAlertObj.AddComponent<Light>();
+                guardRedLight = guardRedAlertObj.AddComponent<Light>();
                 guardRedLight.type = LightType.Point;
                 guardRedLight.range = 3f;
                 guardRedLight.intensity = 0.0f;
@@ -699,16 +782,112 @@ namespace TheBreathlessStudyRoom.Editor
 
             // ==================== PLAYER XR ORIGIN TRACKING RIG ====================
             GameObject xrOriginObj = null;
+            GameObject blackoutQuad = null;
             try
             {
+                // Create Interaction Manager first
+                GameObject interactionManagerObj = new GameObject("XR Interaction Manager");
+                var interactionManager = interactionManagerObj.AddComponent<UnityEngine.XR.Interaction.Toolkit.XRInteractionManager>();
+                Undo.RegisterCreatedObjectUndo(interactionManagerObj, "Create XR Interaction Manager");
+
+                // Copy and load input actions asset
+                string inputActionsPath = CopyInputActionsAsset();
+                InputActionAsset inputActions = null;
+                if (!string.IsNullOrEmpty(inputActionsPath))
+                {
+                    inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(inputActionsPath);
+                }
+
+                if (inputActions != null)
+                {
+                    GameObject inputActionManagerObj = new GameObject("Input Action Manager");
+                    var inputActionManager = inputActionManagerObj.AddComponent<UnityEngine.XR.Interaction.Toolkit.Inputs.InputActionManager>();
+                    inputActionManager.actionAssets = new List<InputActionAsset> { inputActions };
+                    Undo.RegisterCreatedObjectUndo(inputActionManagerObj, "Create Input Action Manager");
+                }
+
+                InputActionReference leftMoveRef = null;
+                InputActionReference rightMoveRef = null;
+                InputActionReference leftTurnRef = null;
+                InputActionReference rightTurnRef = null;
+                InputActionReference leftPosRef = null;
+                InputActionReference leftRotRef = null;
+                InputActionReference leftSelectRef = null;
+                InputActionReference leftActivateRef = null;
+                InputActionReference leftIsTrackedRef = null;
+                InputActionReference leftTrackingStateRef = null;
+
+                InputActionReference rightPosRef = null;
+                InputActionReference rightRotRef = null;
+                InputActionReference rightSelectRef = null;
+                InputActionReference rightActivateRef = null;
+                InputActionReference rightIsTrackedRef = null;
+                InputActionReference rightTrackingStateRef = null;
+
+                InputActionReference headPosRef = null;
+                InputActionReference headRotRef = null;
+
+                if (inputActions != null && !string.IsNullOrEmpty(inputActionsPath))
+                {
+                    var allRefs = AssetDatabase.LoadAllAssetsAtPath(inputActionsPath);
+                    foreach (var asset in allRefs)
+                    {
+                        if (asset is InputActionReference actionRef)
+                        {
+                            string actionPath = actionRef.action.actionMap.name + "/" + actionRef.action.name;
+                            switch (actionPath)
+                            {
+                                case "XRI Left Locomotion/Move": leftMoveRef = actionRef; break;
+                                case "XRI Left Locomotion/Turn": leftTurnRef = actionRef; break;
+                                case "XRI Right Locomotion/Move": rightMoveRef = actionRef; break;
+                                case "XRI Right Locomotion/Turn": rightTurnRef = actionRef; break;
+
+                                case "XRI Left/Position": leftPosRef = actionRef; break;
+                                case "XRI Left/Rotation": leftRotRef = actionRef; break;
+                                case "XRI Left/Is Tracked": leftIsTrackedRef = actionRef; break;
+                                case "XRI Left/Tracking State": leftTrackingStateRef = actionRef; break;
+
+                                case "XRI Left Interaction/Select": leftSelectRef = actionRef; break;
+                                case "XRI Left Interaction/Activate": leftActivateRef = actionRef; break;
+
+                                case "XRI Right/Position": rightPosRef = actionRef; break;
+                                case "XRI Right/Rotation": rightRotRef = actionRef; break;
+                                case "XRI Right/Is Tracked": rightIsTrackedRef = actionRef; break;
+                                case "XRI Right/Tracking State": rightTrackingStateRef = actionRef; break;
+
+                                case "XRI Right Interaction/Select": rightSelectRef = actionRef; break;
+                                case "XRI Right Interaction/Activate": rightActivateRef = actionRef; break;
+
+                                case "XRI Head/Position": headPosRef = actionRef; break;
+                                case "XRI Head/Rotation": headRotRef = actionRef; break;
+                            }
+                        }
+                    }
+                }
+
                 xrOriginObj = new GameObject("XR Origin");
                 xrOriginObj.transform.position = Vector3.zero;
                 var xrOrigin = xrOriginObj.AddComponent<Unity.XR.CoreUtils.XROrigin>();
+                xrOrigin.RequestedTrackingOriginMode = Unity.XR.CoreUtils.XROrigin.TrackingOriginMode.Floor;
+                xrOrigin.CameraYOffset = 1.36f; // Default eye level height for editor play mode testing
                 Undo.RegisterCreatedObjectUndo(xrOriginObj, "Create XR Origin");
+
+                // Character Controller on XR Origin for physics collision & height driver
+                var charController = xrOriginObj.AddComponent<CharacterController>();
+                charController.center = new Vector3(0f, 0.88f, 0f);
+                charController.radius = 0.3f;
+                charController.height = 1.75f;
+                charController.skinWidth = 0.05f;
+
+#pragma warning disable 0618
+                var charDriver = xrOriginObj.AddComponent<CharacterControllerDriver>();
+                charDriver.minHeight = 1.0f;
+                charDriver.maxHeight = 2.2f;
+#pragma warning restore 0618
 
                 GameObject cameraOffsetObj = new GameObject("Camera Offset");
                 cameraOffsetObj.transform.SetParent(xrOriginObj.transform);
-                cameraOffsetObj.transform.localPosition = new Vector3(0f, 1.36f, 0f); // sitting height offset
+                cameraOffsetObj.transform.localPosition = new Vector3(0f, 1.36f, 0f); // sitting height offset fallback
 
                 GameObject mainCameraObj = new GameObject("Main Camera");
                 mainCameraObj.transform.SetParent(cameraOffsetObj.transform);
@@ -725,10 +904,28 @@ namespace TheBreathlessStudyRoom.Editor
                     doorSignScare.playerFlashlight = deskLampLight;
                 }
 
-                // Add standard camera tracking
+                // Add standard camera tracking with HMD bindings
 #if UNITY_2019_1_OR_NEWER
-                mainCameraObj.AddComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>();
+                var tpd = mainCameraObj.AddComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>();
+                tpd.positionInput = headPosRef != null ? new InputActionProperty(headPosRef) : new InputActionProperty(new InputAction("Position", InputActionType.Value, binding: "<XRHMD>/centerEyePosition", expectedControlType: "Vector3"));
+                tpd.rotationInput = headRotRef != null ? new InputActionProperty(headRotRef) : new InputActionProperty(new InputAction("Rotation", InputActionType.Value, binding: "<XRHMD>/centerEyeRotation", expectedControlType: "Quaternion"));
+                tpd.trackingType = UnityEngine.InputSystem.XR.TrackedPoseDriver.TrackingType.RotationAndPosition;
 #endif
+
+                // Create Eye Close Blackout Quad under Main Camera
+                blackoutQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                blackoutQuad.name = "EyeCloseBlackout";
+                blackoutQuad.transform.SetParent(mainCameraObj.transform);
+                blackoutQuad.transform.localPosition = new Vector3(0f, 0f, 0.06f); // just past near clip plane
+                blackoutQuad.transform.localRotation = Quaternion.identity;
+                blackoutQuad.transform.localScale = new Vector3(0.3f, 0.3f, 1f);
+                UnityEngine.Object.DestroyImmediate(blackoutQuad.GetComponent<Collider>());
+                
+                var quadRenderer = blackoutQuad.GetComponent<MeshRenderer>();
+                var unlitMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                unlitMat.color = Color.black;
+                quadRenderer.sharedMaterial = unlitMat;
+                blackoutQuad.SetActive(false);
 
                 // XRI Gaze Interactor node
                 GameObject gazeInteractorObj = new GameObject("GazeInteractor");
@@ -748,9 +945,79 @@ namespace TheBreathlessStudyRoom.Editor
                     gazeInteractorObj.AddComponent<XRRayCastGazeFallback>();
                 }
 
+                // Left Hand Controller
+                GameObject leftHandObj = new GameObject("LeftHand Controller");
+                leftHandObj.transform.SetParent(cameraOffsetObj.transform);
+                leftHandObj.transform.localPosition = Vector3.zero;
+                leftHandObj.transform.localRotation = Quaternion.identity;
+
+#pragma warning disable 0618
+                var leftController = leftHandObj.AddComponent<ActionBasedController>();
+#pragma warning restore 0618
+
+                leftController.positionAction = leftPosRef != null ? new InputActionProperty(leftPosRef) : new InputActionProperty(new InputAction("Position", InputActionType.Value, binding: "<XRController>{LeftHand}/devicePosition", expectedControlType: "Vector3"));
+                leftController.rotationAction = leftRotRef != null ? new InputActionProperty(leftRotRef) : new InputActionProperty(new InputAction("Rotation", InputActionType.Value, binding: "<XRController>{LeftHand}/deviceRotation", expectedControlType: "Quaternion"));
+                leftController.selectAction = leftSelectRef != null ? new InputActionProperty(leftSelectRef) : new InputActionProperty(new InputAction("Select", InputActionType.Button, binding: "<XRController>{LeftHand}/gripPressed"));
+                leftController.activateAction = leftActivateRef != null ? new InputActionProperty(leftActivateRef) : new InputActionProperty(new InputAction("Activate", InputActionType.Button, binding: "<XRController>{LeftHand}/triggerPressed"));
+                leftController.isTrackedAction = leftIsTrackedRef != null ? new InputActionProperty(leftIsTrackedRef) : new InputActionProperty(new InputAction("IsTracked", InputActionType.Button, binding: "<XRController>{LeftHand}/isTracked"));
+                leftController.trackingStateAction = leftTrackingStateRef != null ? new InputActionProperty(leftTrackingStateRef) : new InputActionProperty(new InputAction("TrackingState", InputActionType.Value, binding: "<XRController>{LeftHand}/trackingState", expectedControlType: "Integer"));
+
+                leftHandObj.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRDirectInteractor>();
+                var leftSphereCollider = leftHandObj.AddComponent<SphereCollider>();
+                leftSphereCollider.isTrigger = true;
+                leftSphereCollider.radius = 0.15f;
+
+                // Right Hand Controller
+                GameObject rightHandObj = new GameObject("RightHand Controller");
+                rightHandObj.transform.SetParent(cameraOffsetObj.transform);
+                rightHandObj.transform.localPosition = Vector3.zero;
+                rightHandObj.transform.localRotation = Quaternion.identity;
+
+#pragma warning disable 0618
+                var rightController = rightHandObj.AddComponent<ActionBasedController>();
+#pragma warning restore 0618
+
+                rightController.positionAction = rightPosRef != null ? new InputActionProperty(rightPosRef) : new InputActionProperty(new InputAction("Position", InputActionType.Value, binding: "<XRController>{RightHand}/devicePosition", expectedControlType: "Vector3"));
+                rightController.rotationAction = rightRotRef != null ? new InputActionProperty(rightRotRef) : new InputActionProperty(new InputAction("Rotation", InputActionType.Value, binding: "<XRController>{RightHand}/deviceRotation", expectedControlType: "Quaternion"));
+                rightController.selectAction = rightSelectRef != null ? new InputActionProperty(rightSelectRef) : new InputActionProperty(new InputAction("Select", InputActionType.Button, binding: "<XRController>{RightHand}/gripPressed"));
+                rightController.activateAction = rightActivateRef != null ? new InputActionProperty(rightActivateRef) : new InputActionProperty(new InputAction("Activate", InputActionType.Button, binding: "<XRController>{RightHand}/triggerPressed"));
+                rightController.isTrackedAction = rightIsTrackedRef != null ? new InputActionProperty(rightIsTrackedRef) : new InputActionProperty(new InputAction("IsTracked", InputActionType.Button, binding: "<XRController>{RightHand}/isTracked"));
+                rightController.trackingStateAction = rightTrackingStateRef != null ? new InputActionProperty(rightTrackingStateRef) : new InputActionProperty(new InputAction("TrackingState", InputActionType.Value, binding: "<XRController>{RightHand}/trackingState", expectedControlType: "Integer"));
+
+                rightHandObj.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRDirectInteractor>();
+                var rightSphereCollider = rightHandObj.AddComponent<SphereCollider>();
+                rightSphereCollider.isTrigger = true;
+                rightSphereCollider.radius = 0.15f;
+
+                // Locomotion System
+                GameObject locomotionSystemObj = new GameObject("Locomotion System");
+                locomotionSystemObj.transform.SetParent(xrOriginObj.transform);
+                locomotionSystemObj.transform.localPosition = Vector3.zero;
+
+#pragma warning disable 0618
+                var locomotionSystem = locomotionSystemObj.AddComponent<LocomotionSystem>();
+                locomotionSystem.xrOrigin = xrOrigin;
+
+                // Continuous Move Provider (Action-based)
+                var moveProvider = locomotionSystemObj.AddComponent<ActionBasedContinuousMoveProvider>();
+                moveProvider.system = locomotionSystem;
+                moveProvider.moveSpeed = 1.5f;
+                moveProvider.leftHandMoveAction = leftMoveRef != null ? new InputActionProperty(leftMoveRef) : new InputActionProperty(new InputAction("LeftHandMove", InputActionType.Value, binding: "<XRController>{LeftHand}/thumbstick", expectedControlType: "Vector2"));
+                moveProvider.rightHandMoveAction = rightMoveRef != null ? new InputActionProperty(rightMoveRef) : new InputActionProperty(new InputAction("RightHandMove", InputActionType.Value, binding: "<XRController>{RightHand}/thumbstick", expectedControlType: "Vector2"));
+
+                // Continuous Turn Provider (Action-based)
+                var turnProvider = locomotionSystemObj.AddComponent<ActionBasedContinuousTurnProvider>();
+                turnProvider.system = locomotionSystem;
+                turnProvider.turnSpeed = 60f;
+                turnProvider.leftHandTurnAction = leftTurnRef != null ? new InputActionProperty(leftTurnRef) : new InputActionProperty(new InputAction("LeftHandTurn", InputActionType.Value, binding: "<XRController>{LeftHand}/thumbstick", expectedControlType: "Vector2"));
+                turnProvider.rightHandTurnAction = rightTurnRef != null ? new InputActionProperty(rightTurnRef) : new InputActionProperty(new InputAction("RightHandTurn", InputActionType.Value, binding: "<XRController>{RightHand}/thumbstick", expectedControlType: "Vector2"));
+
+                charDriver.locomotionProvider = moveProvider;
+#pragma warning restore 0618
+
                 xrOrigin.Camera = mainCam;
                 xrOrigin.CameraFloorOffsetObject = cameraOffsetObj;
-                Debug.Log("[SceneSetupHelper] Player XR Origin Camera Rig created successfully.");
+                Debug.Log("[SceneSetupHelper] Player XR Origin Camera Rig with locomotion and hand controllers created successfully.");
             }
             catch (Exception ex)
             {
@@ -771,15 +1038,35 @@ namespace TheBreathlessStudyRoom.Editor
                 if (blackboardScreenRenderer != null) hintSystem.blackboardTarget = blackboardScreenRenderer.transform;
                 if (classroomDoorPanel != null) hintSystem.doorTarget = classroomDoorPanel.transform;
 
-                // Flashlight opening breathing fader
-                if (deskLampBase != null)
+                // Flashlight opening breathing fader & grabbing
+                if (lampGroup != null)
                 {
-                    var flashIntro = deskLampBase.AddComponent<FlashlightIntro>();
-                    flashIntro.flashlightRenderer = deskLampBase.GetComponent<MeshRenderer>();
-                    flashIntro.electricSoundSource = deskLampBase.AddComponent<AudioSource>();
+                    var grabInteractable = lampGroup.AddComponent<XRGrabInteractable>();
+                    var lampRb = lampGroup.GetComponent<Rigidbody>();
+                    if (lampRb != null)
+                    {
+                        lampRb.mass = 1.0f;
+                        lampRb.drag = 1.0f;
+                        lampRb.angularDrag = 1.0f;
+                        lampRb.useGravity = true;
+                        lampRb.isKinematic = false;
+                    }
 
-                    var lampHighlight = deskLampBase.AddComponent<InteractableHighlight>();
+                    var flashIntro = lampGroup.AddComponent<FlashlightIntro>();
+                    flashIntro.flashlightRenderer = deskLampBase.GetComponent<MeshRenderer>();
+                    flashIntro.electricSoundSource = lampGroup.AddComponent<AudioSource>();
+
+                    var lampHighlight = lampGroup.AddComponent<InteractableHighlight>();
                     lampHighlight.targetRenderer = deskLampBase.GetComponent<MeshRenderer>();
+
+                    // Toggle lamp when player presses trigger button (Activate action) while holding it
+                    if (toggleHelper != null)
+                    {
+                        UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                            grabInteractable.activated, 
+                            new UnityAction(toggleHelper.ToggleDeskLamp)
+                        );
+                    }
                 }
 
                 // Blackboard Highlight
@@ -804,7 +1091,116 @@ namespace TheBreathlessStudyRoom.Editor
                 envController.guardRoomParent = guardRoomParent;
                 if (xrOriginObj != null) envController.playerRig = xrOriginObj.transform;
 
+                // Eye Close Manager setup
+                var eyeCloseManager = gameManagerObj.AddComponent<EyeCloseManager>();
+                eyeCloseManager.blackoutQuad = blackoutQuad;
+                eyeCloseManager.timelineManager = timelineManager;
+
                 Debug.Log("[SceneSetupHelper] UX dynamic state managers, Highlights, and Teleport controller linked successfully.");
+
+                // ==================== ENDING BILLBOARD & MANAGER SETUP ====================
+                GameObject endingPanelObj = new GameObject("Ending_Billboard");
+                endingPanelObj.transform.position = new Vector3(0f, 1.3f, 1.5f);
+                endingPanelObj.transform.rotation = Quaternion.identity;
+
+                // Dark backing plate to make text readable in VR
+                var backgroundPlate = CreatePrimitiveCube("BackgroundPlate", endingPanelObj.transform, Vector3.zero, new Vector3(2.2f, 1.4f, 0.02f), GetColor("#0a0a0a"));
+                var borderPlate = CreatePrimitiveCube("BorderPlate", endingPanelObj.transform, new Vector3(0f, 0f, 0.005f), new Vector3(2.24f, 1.44f, 0.015f), GetColor("#222222"));
+
+                // Title Text Mesh
+                GameObject titleObj = new GameObject("TitleText");
+                titleObj.transform.SetParent(endingPanelObj.transform);
+                titleObj.transform.localPosition = new Vector3(0f, 0.5f, -0.015f);
+                titleObj.transform.localRotation = Quaternion.identity;
+                var titleMesh = titleObj.AddComponent<TextMesh>();
+                titleMesh.text = "ENDING TITLE";
+                titleMesh.fontSize = 48;
+                titleMesh.characterSize = 0.015f;
+                titleMesh.anchor = TextAnchor.MiddleCenter;
+                titleMesh.alignment = TextAlignment.Center;
+                titleMesh.color = Color.white;
+
+                // Description Text Mesh
+                GameObject descObj = new GameObject("DescText");
+                descObj.transform.SetParent(endingPanelObj.transform);
+                descObj.transform.localPosition = new Vector3(0f, 0.05f, -0.015f);
+                descObj.transform.localRotation = Quaternion.identity;
+                var descMesh = descObj.AddComponent<TextMesh>();
+                descMesh.text = "Ending Description goes here...";
+                descMesh.fontSize = 28;
+                descMesh.characterSize = 0.013f;
+                descMesh.anchor = TextAnchor.MiddleCenter;
+                descMesh.alignment = TextAlignment.Center;
+                descMesh.color = GetColor("#cccccc");
+
+                // Stats Text Mesh
+                GameObject statsObj = new GameObject("StatsText");
+                statsObj.transform.SetParent(endingPanelObj.transform);
+                statsObj.transform.localPosition = new Vector3(-0.85f, -0.45f, -0.015f);
+                statsObj.transform.localRotation = Quaternion.identity;
+                var statsMesh = statsObj.AddComponent<TextMesh>();
+                statsMesh.text = "Stats details...";
+                statsMesh.fontSize = 24;
+                statsMesh.characterSize = 0.012f;
+                statsMesh.anchor = TextAnchor.MiddleLeft;
+                statsMesh.alignment = TextAlignment.Left;
+                statsMesh.color = GetColor("#99ff99");
+
+                // Stamp Text Mesh
+                GameObject stampObj = new GameObject("StampText");
+                stampObj.transform.SetParent(endingPanelObj.transform);
+                stampObj.transform.localPosition = new Vector3(0.5f, -0.45f, -0.015f);
+                stampObj.transform.localRotation = Quaternion.identity;
+                var stampMesh = stampObj.AddComponent<TextMesh>();
+                stampMesh.text = "STAMP";
+                stampMesh.fontSize = 36;
+                stampMesh.characterSize = 0.015f;
+                stampMesh.anchor = TextAnchor.MiddleCenter;
+                stampMesh.alignment = TextAlignment.Center;
+                stampMesh.color = Color.red;
+
+                // Add EndingManager component to _GameManager
+                var endingManager = gameManagerObj.AddComponent<EndingManager>();
+                endingManager.endingBillboardPanel = endingPanelObj;
+                endingManager.titleText = titleMesh;
+                endingManager.descriptionText = descMesh;
+                endingManager.statsText = statsMesh;
+                endingManager.stampText = stampMesh;
+                endingManager.cctvScreenRenderer = cctvScreenRenderer;
+                endingManager.redEmergencyLight = guardRedLight;
+
+                // Wire TimelineManager via SerializedObject to the EndingManager
+                SerializedObject endingSO = new SerializedObject(endingManager);
+                endingSO.FindProperty("_timelineManager").objectReferenceValue = timelineManager;
+                endingSO.ApplyModifiedProperties();
+
+                // Parent the billboard under the _GameManager
+                endingPanelObj.transform.SetParent(gameManagerObj.transform);
+
+                // Wire up climax choices
+                if (stampGaze != null)
+                {
+                    UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                        stampGaze.OnDwellSelected,
+                        new UnityAction(endingManager.TriggerStampedComplianceEnding)
+                    );
+                    UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                        stampGaze.selectEntered,
+                        new UnityAction(endingManager.TriggerStampedComplianceEnding)
+                    );
+                }
+
+                if (monitorGaze != null)
+                {
+                    UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                        monitorGaze.OnDwellSelected,
+                        new UnityAction(endingManager.TriggerSmashedMonitorEnding)
+                    );
+                    UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                        monitorGaze.selectEntered,
+                        new UnityAction(endingManager.TriggerSmashedMonitorEnding)
+                    );
+                }
             }
             catch (Exception ex)
             {
@@ -970,6 +1366,52 @@ namespace TheBreathlessStudyRoom.Editor
             }
             AssetDatabase.CreateAsset(mat, path);
             return mat;
+        }
+
+        private static string CopyInputActionsAsset()
+        {
+            string destDir = "Assets/_Project/Input";
+            if (!Directory.Exists(destDir))
+            {
+                Directory.CreateDirectory(destDir);
+            }
+            string destPath = Path.Combine(destDir, "XRI Default Input Actions.inputactions");
+            string destMetaPath = destPath + ".meta";
+            
+            if (File.Exists(destPath))
+            {
+                return destPath;
+            }
+
+            // Find XRI package folder in PackageCache
+            string packageCacheDir = "Library/PackageCache";
+            if (Directory.Exists(packageCacheDir))
+            {
+                foreach (var dir in Directory.GetDirectories(packageCacheDir, "com.unity.xr.interaction.toolkit@*"))
+                {
+                    string srcPath = Path.Combine(dir, "Samples~/Starter Assets/XRI Default Input Actions.inputactions");
+                    string srcMetaPath = srcPath + ".meta";
+                    if (File.Exists(srcPath))
+                    {
+                        try
+                        {
+                            File.Copy(srcPath, destPath);
+                            if (File.Exists(srcMetaPath))
+                            {
+                                File.Copy(srcMetaPath, destMetaPath);
+                            }
+                            AssetDatabase.ImportAsset(destPath);
+                            Debug.Log($"[SceneSetupHelper] Successfully imported input actions asset to: {destPath}");
+                            return destPath;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"[SceneSetupHelper] Failed to copy input actions asset: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         private static UnityEngine.XR.Interaction.Toolkit.InteractionLayerMask GetGazeInteractionLayer()
