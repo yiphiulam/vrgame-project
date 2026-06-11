@@ -1201,6 +1201,120 @@ namespace TheBreathlessStudyRoom.Editor
                         new UnityAction(endingManager.TriggerSmashedMonitorEnding)
                     );
                 }
+
+                // ==================== START SCREEN BILLBOARD & MANAGER SETUP ====================
+                GameObject startPanelObj = new GameObject("Start_Billboard");
+                startPanelObj.transform.position = new Vector3(0f, 1.35f, 0.7f);
+                startPanelObj.transform.rotation = Quaternion.identity;
+
+                // Dark backing plate
+                var startBackgroundPlate = CreatePrimitiveCube("BackgroundPlate", startPanelObj.transform, Vector3.zero, new Vector3(2.4f, 1.5f, 0.02f), GetColor("#0a0a0a"));
+                // Red border
+                var startBorderPlate = CreatePrimitiveCube("BorderPlate", startPanelObj.transform, new Vector3(0f, 0f, 0.005f), new Vector3(2.44f, 1.54f, 0.015f), GetColor("#881111"));
+
+                // Title Text Mesh
+                GameObject startTitleObj = new GameObject("TitleText");
+                startTitleObj.transform.SetParent(startPanelObj.transform);
+                startTitleObj.transform.localPosition = new Vector3(0f, 0.55f, -0.015f);
+                startTitleObj.transform.localRotation = Quaternion.identity;
+                var startTitleMesh = startTitleObj.AddComponent<TextMesh>();
+                startTitleMesh.text = "窒  息  室";
+                startTitleMesh.fontSize = 64;
+                startTitleMesh.characterSize = 0.015f;
+                startTitleMesh.anchor = TextAnchor.MiddleCenter;
+                startTitleMesh.alignment = TextAlignment.Center;
+                startTitleMesh.color = GetColor("#cc1111");
+
+                // Subtitle Text Mesh
+                GameObject startSubObj = new GameObject("SubtitleText");
+                startSubObj.transform.SetParent(startPanelObj.transform);
+                startSubObj.transform.localPosition = new Vector3(0f, 0.40f, -0.015f);
+                startSubObj.transform.localRotation = Quaternion.identity;
+                var startSubMesh = startSubObj.AddComponent<TextMesh>();
+                startSubMesh.text = "THE BREATHLESS STUDY ROOM";
+                startSubMesh.fontSize = 28;
+                startSubMesh.characterSize = 0.011f;
+                startSubMesh.anchor = TextAnchor.MiddleCenter;
+                startSubMesh.alignment = TextAlignment.Center;
+                startSubMesh.color = GetColor("#ffcc00");
+
+                // Warning Text Mesh
+                GameObject startWarnObj = new GameObject("WarningText");
+                startWarnObj.transform.SetParent(startPanelObj.transform);
+                startWarnObj.transform.localPosition = new Vector3(0f, 0.20f, -0.015f);
+                startWarnObj.transform.localRotation = Quaternion.identity;
+                var startWarnMesh = startWarnObj.AddComponent<TextMesh>();
+                startWarnMesh.text = "建議配戴耳機以獲得最佳 3D 空間環繞聲效果";
+                startWarnMesh.fontSize = 24;
+                startWarnMesh.characterSize = 0.009f;
+                startWarnMesh.anchor = TextAnchor.MiddleCenter;
+                startWarnMesh.alignment = TextAlignment.Center;
+                startWarnMesh.color = Color.white;
+
+                // Quote Text Mesh
+                GameObject startQuoteObj = new GameObject("QuoteText");
+                startQuoteObj.transform.SetParent(startPanelObj.transform);
+                startQuoteObj.transform.localPosition = new Vector3(0f, -0.05f, -0.015f);
+                startQuoteObj.transform.localRotation = Quaternion.identity;
+                var startQuoteMesh = startQuoteObj.AddComponent<TextMesh>();
+                startQuoteMesh.text = "「真正的恐怖，並非來自鬼魂，而是對荒謬規則的盲目服從。」";
+                startQuoteMesh.fontSize = 24;
+                startQuoteMesh.characterSize = 0.0085f;
+                startQuoteMesh.anchor = TextAnchor.MiddleCenter;
+                startQuoteMesh.alignment = TextAlignment.Center;
+                startQuoteMesh.color = GetColor("#bbbbbb");
+
+                // Tip Text Mesh
+                GameObject startTipObj = new GameObject("TipText");
+                startTipObj.transform.SetParent(startPanelObj.transform);
+                startTipObj.transform.localPosition = new Vector3(0f, -0.25f, -0.015f);
+                startTipObj.transform.localRotation = Quaternion.identity;
+                var startTipMesh = startTipObj.AddComponent<TextMesh>();
+                startTipMesh.text = "互動提示：電腦端使用滑鼠拖拽視角，注視物體可觸發互動；支援手把與 VR 模式。";
+                startTipMesh.fontSize = 20;
+                startTipMesh.characterSize = 0.0075f;
+                startTipMesh.anchor = TextAnchor.MiddleCenter;
+                startTipMesh.alignment = TextAlignment.Center;
+                startTipMesh.color = GetColor("#ffa500");
+
+                // 3D Button Plane/Box
+                GameObject startBtnObj = CreatePrimitiveCube("StartButton", startPanelObj.transform, new Vector3(0f, -0.55f, -0.015f), new Vector3(0.7f, 0.22f, 0.04f), GetColor("#1a1a1a"));
+                CreatePrimitiveCube("ButtonBorder", startBtnObj.transform, new Vector3(0f, 0f, 0.005f), new Vector3(0.72f, 0.24f, 0.03f), GetColor("#ffcc00"));
+
+                // Button Text Mesh
+                GameObject btnTextObj = new GameObject("ButtonText");
+                btnTextObj.transform.SetParent(startBtnObj.transform);
+                btnTextObj.transform.localPosition = new Vector3(0f, 0f, -0.025f);
+                btnTextObj.transform.localRotation = Quaternion.identity;
+                var btnTextMesh = btnTextObj.AddComponent<TextMesh>();
+                btnTextMesh.text = "進入自習室\nENTER CLASSROOM";
+                btnTextMesh.fontSize = 24;
+                btnTextMesh.characterSize = 0.009f;
+                btnTextMesh.anchor = TextAnchor.MiddleCenter;
+                btnTextMesh.alignment = TextAlignment.Center;
+                btnTextMesh.color = Color.white;
+
+                // Add StartScreenManager to _GameManager
+                var startScreenManager = gameManagerObj.AddComponent<StartScreenManager>();
+                startScreenManager.startScreenBillboardPanel = startPanelObj;
+                startScreenManager.timelineManager = timelineManager;
+
+                // Parent the billboard under the _GameManager
+                startPanelObj.transform.SetParent(gameManagerObj.transform);
+
+                // Add GazeDwellSelector and XRI Simple Interactable to Start Button
+                var startBtnGaze = startBtnObj.AddComponent<GazeDwellSelector>();
+                startBtnGaze.interactionLayers = GetGazeInteractionLayer();
+
+                // Wire button click/gaze event to EnterClassroom
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    startBtnGaze.OnDwellSelected,
+                    new UnityAction(startScreenManager.EnterClassroom)
+                );
+                UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(
+                    startBtnGaze.selectEntered,
+                    new UnityAction(startScreenManager.EnterClassroom)
+                );
             }
             catch (Exception ex)
             {

@@ -69,8 +69,8 @@ namespace TheBreathlessStudyRoom.Core
 
         private void Start()
         {
-            // Auto-start the sequence machine when the standalone scene loads
-            StartTimeline();
+            // The game will wait for StartScreenManager to call StartTimeline()
+            Debug.Log("[TimelineManager] Initialized. Waiting for start input in GameState.Start...");
         }
 
         private void Update()
